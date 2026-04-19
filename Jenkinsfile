@@ -1,13 +1,16 @@
 pipeline {
     agent any
 
+    options {
+        timestamps()
+    }
+
     environment {
-        // Replace with your Docker Hub username
-        DOCKERHUB_USER   = 'kamalraj12345'
-        CLIENT_IMAGE     = "${DOCKERHUB_USER}/task-manager-client"
-        SERVER_IMAGE     = "${DOCKERHUB_USER}/task-manager-server"
-        // Tag images with the Jenkins build number for traceability
-        IMAGE_TAG        = "${env.BUILD_NUMBER}"
+        DOCKERHUB_USER        = 'kamalraj12345'
+        DOCKER_CREDENTIALS_ID = 'docker-hub-credentials'
+        CLIENT_IMAGE          = "${DOCKERHUB_USER}/task-manager-client"
+        SERVER_IMAGE          = "${DOCKERHUB_USER}/task-manager-server"
+        IMAGE_TAG             = "${env.BUILD_NUMBER}"
     }
 
     stages {
@@ -17,8 +20,6 @@ pipeline {
                 checkout scm
             }
         }
-
-        // ── Build ────────────────────────────────────────────────────────────
 
         stage('Build Client Image') {
             steps {
@@ -46,12 +47,10 @@ pipeline {
             }
         }
 
-        // ── Push ─────────────────────────────────────────────────────────────
-
         stage('Push to Docker Hub') {
             steps {
                 withCredentials([usernamePassword(
-                    credentialsId: 'docker-hub-credentials',
+                    credentialsId: DOCKER_CREDENTIALS_ID,
                     usernameVariable: 'DOCKER_USER',
                     passwordVariable: 'DOCKER_PASS'
                 )]) {
@@ -70,7 +69,6 @@ pipeline {
 
     post {
         always {
-            // Always log out of Docker Hub and clean up local images
             sh 'docker logout || true'
             sh """
                 docker rmi ${CLIENT_IMAGE}:${IMAGE_TAG} ${CLIENT_IMAGE}:latest || true
@@ -78,10 +76,10 @@ pipeline {
             """
         }
         success {
-            echo "✅ Images pushed successfully: ${CLIENT_IMAGE}:${IMAGE_TAG} and ${SERVER_IMAGE}:${IMAGE_TAG}"
+            echo "Images pushed successfully: ${CLIENT_IMAGE}:${IMAGE_TAG} and ${SERVER_IMAGE}:${IMAGE_TAG}"
         }
         failure {
-            echo "❌ Pipeline failed. Check the logs above for details."
+            echo "Pipeline failed. Check the logs above for details."
         }
     }
 }
