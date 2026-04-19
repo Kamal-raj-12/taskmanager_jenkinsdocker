@@ -1,0 +1,48 @@
+# ---- Dependencies ----
+node_modules/
+.pnp/
+.pnp.js
+
+# ---- Build output ----
+client/build/
+build/
+dist/
+
+# ---- Test / coverage ----
+coverage/
+client/coverage/
+server/coverage/
+
+# ---- Runtime uploads (should live on a volume) ----
+uploads/
+server/uploads/
+
+# ---- Environment / secrets ----
+.env
+.env.*
+!.env.example
+!.env.sample
+
+# ---- Logs ----
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+lerna-debug.log*
+logs/
+
+# ---- Caches ----
+.eslintcache
+.cache/
+
+# ---- OS / editor ----
+.DS_Store
+Thumbs.db
+Desktop.ini
+.vscode/
+.idea/
+*.swp
+
+# ---- Misc ----
+*.tgz
