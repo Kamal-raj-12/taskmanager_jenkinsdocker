@@ -3,6 +3,7 @@ pipeline {
 
     options {
         timestamps()
+        skipDefaultCheckout(true)
     }
 
     environment {
@@ -11,6 +12,7 @@ pipeline {
         CLIENT_IMAGE          = "${DOCKERHUB_USER}/task-manager-client"
         SERVER_IMAGE          = "${DOCKERHUB_USER}/task-manager-server"
         IMAGE_TAG             = "${env.BUILD_NUMBER}"
+        K8S_NAMESPACE         = 'task-manager'
     }
 
     stages {
@@ -65,6 +67,30 @@ pipeline {
                 }
             }
         }
+
+        stage('Deploy to Kubernetes') {
+            steps {
+                sh '''
+                    if ! command -v kubectl >/dev/null 2>&1; then
+                        echo "kubectl is required on the Jenkins node for Kubernetes deployment."
+                        exit 1
+                    fi
+
+                    kubectl version --client
+
+                    kubectl apply -f k8s/namespace.yaml
+                    kubectl apply -f k8s/mongo.yaml
+                    kubectl apply -f k8s/backend.yaml
+                    kubectl apply -f k8s/frontend.yaml
+
+                    kubectl set image deployment/task-manager-server task-manager-server=${SERVER_IMAGE}:${IMAGE_TAG} -n ${K8S_NAMESPACE}
+                    kubectl set image deployment/task-manager-client task-manager-client=${CLIENT_IMAGE}:${IMAGE_TAG} -n ${K8S_NAMESPACE}
+
+                    kubectl rollout status deployment/task-manager-server -n ${K8S_NAMESPACE} --timeout=180s
+                    kubectl rollout status deployment/task-manager-client -n ${K8S_NAMESPACE} --timeout=180s
+                '''
+            }
+        }
     }
 
     post {
@@ -76,7 +102,7 @@ pipeline {
             """
         }
         success {
-            echo "Images pushed successfully: ${CLIENT_IMAGE}:${IMAGE_TAG} and ${SERVER_IMAGE}:${IMAGE_TAG}"
+            echo "Build, push, and Kubernetes deploy completed: ${CLIENT_IMAGE}:${IMAGE_TAG}, ${SERVER_IMAGE}:${IMAGE_TAG}"
         }
         failure {
             echo "Pipeline failed. Check the logs above for details."

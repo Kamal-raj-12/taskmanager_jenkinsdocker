@@ -1,6 +1,10 @@
 import React, { useState } from 'react';
 import { User, Shield, Briefcase } from 'lucide-react';
 
+const API_BASE_URL =
+  process.env.REACT_APP_API_BASE_URL ||
+  (process.env.NODE_ENV === 'development' ? 'http://localhost:4000/api' : '/api');
+
 export default function Auth({ onLoginSuccess }) {
   const [selectedRole, setSelectedRole] = useState(null); // null, 'admin', 'employee'
   const [isLogin, setIsLogin] = useState(true);
@@ -18,7 +22,7 @@ export default function Auth({ onLoginSuccess }) {
     setLoading(true);
     
     try {
-      const endpoint = isLogin ? 'http://localhost:4000/api/login' : 'http://localhost:4000/api/signup';
+      const endpoint = isLogin ? `${API_BASE_URL}/login` : `${API_BASE_URL}/signup`;
       const body = isLogin 
         ? { email: formData.email, password: formData.password }
         : { name: formData.name, email: formData.email, password: formData.password, role: selectedRole };

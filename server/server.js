@@ -4,24 +4,27 @@ import cors from "cors";
 import mongoose from "mongoose";
 import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
+import dotenv from "dotenv";
 import { Server } from "socket.io";
 import User from "./models/User.js";
 import Project from "./models/Project.js";
 
+dotenv.config();
+
+const PORT = Number(process.env.PORT) || 4000;
+const MONGO_URI = process.env.MONGO_URI || "mongodb://127.0.0.1:27017/taskmanager";
+const JWT_SECRET = process.env.JWT_SECRET || "secretkey";
+const CORS_ORIGIN = process.env.CORS_ORIGIN || "http://localhost:3000";
+
+const corsOptions = CORS_ORIGIN === "*" ? { origin: true } : { origin: CORS_ORIGIN };
+
 const app = express();
-app.use(cors());
+app.use(cors(corsOptions));
 app.use(express.json());
 
 // --- MongoDB Connection ---
-const MONGO_URI = "mongodb://127.0.0.1:27017/taskmanager";
-mongoose.connect(MONGO_URI, {
-  useNewUrlParser: true,
-  useUnifiedTopology: true,
-});
+mongoose.connect(MONGO_URI);
 mongoose.connection.once("open", () => console.log("✅ MongoDB connected"));
-
-// --- JWT Secret ---
-const JWT_SECRET = "secretkey";
 
 // --- Middleware to verify JWT ---
 const verifyToken = (req, res, next) => {
@@ -281,7 +284,7 @@ app.post("/api/projects/:projectId/tasks/:taskId/files", verifyToken, async (req
 const server = http.createServer(app);
 const io = new Server(server, {
   cors: {
-    origin: "http://localhost:3000",
+    origin: CORS_ORIGIN === "*" ? true : CORS_ORIGIN,
     methods: ["GET", "POST"],
   },
 });
@@ -295,5 +298,4 @@ io.on("connection", (socket) => {
 });
 
 // --- Start Server ---
-const PORT = 4000;
 server.listen(PORT, () => console.log(`🚀 Server running on port ${PORT}`));
