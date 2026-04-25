@@ -4,6 +4,8 @@ pipeline {
     options {
         timestamps()
         skipDefaultCheckout(true)
+        disableConcurrentBuilds()
+        timeout(time: 40, unit: 'MINUTES')
     }
 
     environment {
@@ -13,6 +15,7 @@ pipeline {
         SERVER_IMAGE          = "${DOCKERHUB_USER}/task-manager-server"
         IMAGE_TAG             = "${env.BUILD_NUMBER}"
         K8S_NAMESPACE         = 'task-manager'
+        DOCKER_BUILDKIT       = '1'
     }
 
     stages {
@@ -25,26 +28,34 @@ pipeline {
 
         stage('Build Client Image') {
             steps {
-                dir('client') {
-                    sh """
-                        docker build \
-                            -t ${CLIENT_IMAGE}:${IMAGE_TAG} \
-                            -t ${CLIENT_IMAGE}:latest \
-                            .
-                    """
+                timeout(time: 15, unit: 'MINUTES') {
+                    dir('client') {
+                        sh """
+                            docker pull ${CLIENT_IMAGE}:latest || true
+                            docker build \
+                                --cache-from ${CLIENT_IMAGE}:latest \
+                                -t ${CLIENT_IMAGE}:${IMAGE_TAG} \
+                                -t ${CLIENT_IMAGE}:latest \
+                                .
+                        """
+                    }
                 }
             }
         }
 
         stage('Build Server Image') {
             steps {
-                dir('server') {
-                    sh """
-                        docker build \
-                            -t ${SERVER_IMAGE}:${IMAGE_TAG} \
-                            -t ${SERVER_IMAGE}:latest \
-                            .
-                    """
+                timeout(time: 15, unit: 'MINUTES') {
+                    dir('server') {
+                        sh """
+                            docker pull ${SERVER_IMAGE}:latest || true
+                            docker build \
+                                --cache-from ${SERVER_IMAGE}:latest \
+                                -t ${SERVER_IMAGE}:${IMAGE_TAG} \
+                                -t ${SERVER_IMAGE}:latest \
+                                .
+                        """
+                    }
                 }
             }
         }
@@ -56,39 +67,43 @@ pipeline {
                     usernameVariable: 'DOCKER_USER',
                     passwordVariable: 'DOCKER_PASS'
                 )]) {
-                    sh 'echo "$DOCKER_PASS" | docker login -u "$DOCKER_USER" --password-stdin'
+                    timeout(time: 10, unit: 'MINUTES') {
+                        sh 'echo "$DOCKER_PASS" | docker login -u "$DOCKER_USER" --password-stdin'
 
-                    sh """
-                        docker push ${CLIENT_IMAGE}:${IMAGE_TAG}
-                        docker push ${CLIENT_IMAGE}:latest
-                        docker push ${SERVER_IMAGE}:${IMAGE_TAG}
-                        docker push ${SERVER_IMAGE}:latest
-                    """
+                        sh """
+                            docker push ${CLIENT_IMAGE}:${IMAGE_TAG}
+                            docker push ${CLIENT_IMAGE}:latest
+                            docker push ${SERVER_IMAGE}:${IMAGE_TAG}
+                            docker push ${SERVER_IMAGE}:latest
+                        """
+                    }
                 }
             }
         }
 
         stage('Deploy to Kubernetes') {
             steps {
-                sh '''
-                    if ! command -v kubectl >/dev/null 2>&1; then
-                        echo "kubectl is required on the Jenkins node for Kubernetes deployment."
-                        exit 1
-                    fi
+                timeout(time: 10, unit: 'MINUTES') {
+                    sh '''
+                        if ! command -v kubectl >/dev/null 2>&1; then
+                            echo "kubectl is required on the Jenkins node for Kubernetes deployment."
+                            exit 1
+                        fi
 
-                    kubectl version --client
+                        kubectl version --client
 
-                    kubectl apply -f k8s/namespace.yaml
-                    kubectl apply -f k8s/mongo.yaml
-                    kubectl apply -f k8s/backend.yaml
-                    kubectl apply -f k8s/frontend.yaml
+                        kubectl apply -f k8s/namespace.yaml
+                        kubectl apply -f k8s/mongo.yaml
+                        kubectl apply -f k8s/backend.yaml
+                        kubectl apply -f k8s/frontend.yaml
 
-                    kubectl set image deployment/task-manager-server task-manager-server=${SERVER_IMAGE}:${IMAGE_TAG} -n ${K8S_NAMESPACE}
-                    kubectl set image deployment/task-manager-client task-manager-client=${CLIENT_IMAGE}:${IMAGE_TAG} -n ${K8S_NAMESPACE}
+                        kubectl set image deployment/task-manager-server task-manager-server=${SERVER_IMAGE}:${IMAGE_TAG} -n ${K8S_NAMESPACE}
+                        kubectl set image deployment/task-manager-client task-manager-client=${CLIENT_IMAGE}:${IMAGE_TAG} -n ${K8S_NAMESPACE}
 
-                    kubectl rollout status deployment/task-manager-server -n ${K8S_NAMESPACE} --timeout=180s
-                    kubectl rollout status deployment/task-manager-client -n ${K8S_NAMESPACE} --timeout=180s
-                '''
+                        kubectl rollout status deployment/task-manager-server -n ${K8S_NAMESPACE} --timeout=240s
+                        kubectl rollout status deployment/task-manager-client -n ${K8S_NAMESPACE} --timeout=240s
+                    '''
+                }
             }
         }
     }
