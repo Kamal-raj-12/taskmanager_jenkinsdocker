@@ -82,7 +82,7 @@ export default function Auth({ onLoginSuccess }) {
               Task Manager
             </h1>
             <p className="text-gray-600 mt-2 text-lg">
-              Select your role to continue
+              Select your role
             </p>
           </div>
 
