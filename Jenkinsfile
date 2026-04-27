@@ -33,7 +33,6 @@ pipeline {
                         sh """
                             docker pull ${CLIENT_IMAGE}:latest || true
                             docker build \
-                                --cache-from ${CLIENT_IMAGE}:latest \
                                 -t ${CLIENT_IMAGE}:${IMAGE_TAG} \
                                 -t ${CLIENT_IMAGE}:latest \
                                 .
@@ -50,7 +49,6 @@ pipeline {
                         sh """
                             docker pull ${SERVER_IMAGE}:latest || true
                             docker build \
-                                --cache-from ${SERVER_IMAGE}:latest \
                                 -t ${SERVER_IMAGE}:${IMAGE_TAG} \
                                 -t ${SERVER_IMAGE}:latest \
                                 .
