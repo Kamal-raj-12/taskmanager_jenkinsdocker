@@ -15,7 +15,7 @@ pipeline {
         SERVER_IMAGE          = "${DOCKERHUB_USER}/task-manager-server"
         IMAGE_TAG             = "${env.BUILD_NUMBER}"
         K8S_NAMESPACE         = 'task-manager'
-        DOCKER_BUILDKIT       = '1'
+        DOCKER_BUILDKIT       = '0'
     }
 
     stages {
