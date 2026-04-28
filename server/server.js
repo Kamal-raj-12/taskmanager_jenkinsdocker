@@ -8,6 +8,7 @@ import dotenv from "dotenv";
 import { Server } from "socket.io";
 import User from "./models/User.js";
 import Project from "./models/Project.js";
+import client from "prom-client";
 
 dotenv.config();
 
@@ -25,6 +26,17 @@ app.use(express.json());
 // --- MongoDB Connection ---
 mongoose.connect(MONGO_URI);
 mongoose.connection.once("open", () => console.log("✅ MongoDB connected"));
+
+// --- Prometheus Metrics Setup ---
+const collectDefaultMetrics = client.collectDefaultMetrics;
+const Registry = client.Registry;
+const register = new Registry();
+collectDefaultMetrics({ register });
+
+app.get('/metrics', async (req, res) => {
+  res.set('Content-Type', register.contentType);
+  res.end(await register.metrics());
+});
 
 // --- Middleware to verify JWT ---
 const verifyToken = (req, res, next) => {

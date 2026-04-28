@@ -82,4 +82,5 @@ spec:
     - name: http
       port: 4000
       targetPort: 4000
-  type: ClusterIP
+      nodePort: 30040
+  type: NodePort

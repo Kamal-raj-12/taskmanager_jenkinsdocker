@@ -1,0 +1,12 @@
+global:
+  scrape_interval: 15s
+
+scrape_configs:
+  - job_name: 'prometheus'
+    static_configs:
+      - targets: ['localhost:9090']
+
+  - job_name: 'task-manager-backend'
+    static_configs:
+      # host.docker.internal allows docker to reach the EC2 host machine where NodePort is exposed
+      - targets: ['host.docker.internal:30040']
