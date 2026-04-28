@@ -20,10 +20,10 @@ export default function Auth({ onLoginSuccess }) {
     e.preventDefault();
     setError('');
     setLoading(true);
-    
+
     try {
       const endpoint = isLogin ? `${API_BASE_URL}/login` : `${API_BASE_URL}/signup`;
-      const body = isLogin 
+      const body = isLogin
         ? { email: formData.email, password: formData.password }
         : { name: formData.name, email: formData.email, password: formData.password, role: selectedRole };
 
@@ -32,9 +32,9 @@ export default function Auth({ onLoginSuccess }) {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(body)
       });
-      
+
       const data = await response.json();
-      
+
       if (response.ok) {
         if (isLogin) {
           // Verify the user's role matches the selected login type
@@ -82,7 +82,7 @@ export default function Auth({ onLoginSuccess }) {
               Task Manager
             </h1>
             <p className="text-gray-600 mt-2 text-lg">
-              Select your role
+              Select your role to continue
             </p>
           </div>
 
@@ -117,8 +117,8 @@ export default function Auth({ onLoginSuccess }) {
   // Login/Signup form based on selected role
   const isAdminRole = selectedRole === 'admin';
   const roleColor = isAdminRole ? 'indigo' : 'green';
-  const roleGradient = isAdminRole 
-    ? 'from-indigo-600 to-purple-600' 
+  const roleGradient = isAdminRole
+    ? 'from-indigo-600 to-purple-600'
     : 'from-green-600 to-teal-600';
 
   return (
@@ -143,13 +143,13 @@ export default function Auth({ onLoginSuccess }) {
             {isLogin ? 'Sign in to your workspace' : 'Create your account'}
           </p>
         </div>
-        
+
         {error && (
           <div className={`${error.includes('successful') ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'} p-3 rounded-lg mb-4 text-sm`}>
             {error}
           </div>
         )}
-        
+
         <div className="space-y-4">
           {!isLogin && (
             <div>
@@ -157,30 +157,30 @@ export default function Auth({ onLoginSuccess }) {
               <input
                 type="text"
                 value={formData.name}
-                onChange={(e) => setFormData({...formData, name: e.target.value})}
+                onChange={(e) => setFormData({ ...formData, name: e.target.value })}
                 className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all"
                 placeholder="Enter your name"
               />
             </div>
           )}
-          
+
           <div>
             <label className="block text-sm font-semibold text-gray-700 mb-2">Email</label>
             <input
               type="email"
               value={formData.email}
-              onChange={(e) => setFormData({...formData, email: e.target.value})}
+              onChange={(e) => setFormData({ ...formData, email: e.target.value })}
               className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all"
               placeholder="Enter your email"
             />
           </div>
-          
+
           <div>
             <label className="block text-sm font-semibold text-gray-700 mb-2">Password</label>
             <input
               type="password"
               value={formData.password}
-              onChange={(e) => setFormData({...formData, password: e.target.value})}
+              onChange={(e) => setFormData({ ...formData, password: e.target.value })}
               className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all"
               placeholder="Enter your password"
             />
@@ -193,7 +193,7 @@ export default function Auth({ onLoginSuccess }) {
               </p>
             </div>
           )}
-          
+
           <button
             onClick={handleSubmit}
             disabled={loading}
@@ -202,7 +202,7 @@ export default function Auth({ onLoginSuccess }) {
             {loading ? 'Please wait...' : (isLogin ? 'Sign In' : 'Sign Up')}
           </button>
         </div>
-        
+
         <button
           onClick={() => {
             setIsLogin(!isLogin);
